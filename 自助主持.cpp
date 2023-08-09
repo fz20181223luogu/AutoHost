@@ -144,25 +144,27 @@ void print(int cond,int &nxt){//cond=2--print+upd cond=1--print cond=0--no_print
 	for(int i=1;i<=n;++i){
 		for(int l=1;l<=cfg[3];++l){
 			if(a[i].name[l].fa==-1) continue;
-			out<<a[i].id<<'-'<<l<<"("<<a[i].name[l].fa<<") ";
+			out<<a[i].id;
+			if(cfg[3]>1) out<<'-'<<l;
+			out<<"("<<a[i].name[l].fa<<") ";
 		}
 	}
-	if(cond!=0&&cfg[0]){
-		out<<endl<<endl;
-		out<<ind[5];//下一个开 
-		if(cond==2){
-			do{
-				++nxt;
-				if(nxt>n) nxt=1;
-			}while(a[nxt].dead());	
-		}
-		out<<a[nxt].id;
-	}
+//	if(cond!=0&&cfg[0]){
+//		out<<endl<<endl;
+//		out<<ind[5];//下一个开 
+//		if(cond==2){
+//			do{
+//				++nxt;
+//				if(nxt>n) nxt=1;
+//			}while(a[nxt].dead());	
+//		}
+//		out<<a[nxt].id;
+//	}
 	out.close();
 	system("start out.txt"); 
 }
 int main(){
-printf("自助主持 V2.0 By 180-fz201812.23\n\
+printf("自助主持 V2.1 By 180-fz201812.23\n\
 使用前须知：由于C++的命令行窗口不支持输出部分特殊字符，故所有的游戏内操作均涉及文件。控制台仅输出提示信息。\n\
 最多只支持%d人，歌曲长度只支持%d个字符，每位玩家最多%d条命。\n\
 请确认settings.txt中的配置是否正确，若正确则任意键继续。可使用项目另配的config.exe进行可视化修改。\n",N,M,L);
@@ -200,16 +202,21 @@ printf("自助主持 V2.0 By 180-fz201812.23\n\
 	opened.insert(" ");//blank need to be shown 
 	puts("读取完毕。");
 	int nxt=0,lst=2;
+	bool forcestop=0;
 	for(int opcnt=1;ret>cfg[0];++opcnt){
 		printf("-----------------第%d次操作开始-----------------\n",opcnt);
 		print(lst,nxt);
 		puts("当前游戏状态已保存至out.txt中，已重新打开该文件。");
-		L1:puts("请在同目录下的cmd.txt中输入命令：一个字符表示要开的字符，或两个数字分别表示被开的玩家编号及执行操作的玩家编号（用一个空格隔开）。请不要添加任何其他字符。");
+		L1:puts("请在同目录下的cmd.txt中输入合法命令（格式可见附带readme.md），且请不要添加任何其他字符。");
 		ch=getch();
 		string nw;
 		in.open("cmd.txt");
 		int op;stringstream ss;
 		getline(in,nw);
+		if(nw=="STOP"){
+			forcestop=1;
+			break;
+		}
 		ss<<nw;ss>>op;
 		ss.clear();
 		getline(in,nw);
@@ -280,6 +287,66 @@ printf("自助主持 V2.0 By 180-fz201812.23\n\
 				if(a[px].dead())ret--;
 				break;
 			}
+			case 3:{
+				in.close();
+				if(nw==""){
+					puts("错误：没有找到要开的字符。请重新输入合法命令，保存好后在本窗口任意键继续。");
+					goto L1; 
+				}
+				if(_(nw[0])!=nw.size()){//Multiple characters
+					puts("错误：输入了多个字符。请重新输入合法命令，保存好后在本窗口任意键继续。");
+					goto L1; 
+				}
+				if(isbig(nw)) nw[0]^=0x20;
+				if(opened.find(nw)==opened.end()){//Duplicated request
+					puts("错误：该字符未被开。请重新输入合法命令，保存好后在本窗口任意键继续。");
+					goto L1; 
+				}
+//				cout<<"找到要开的字符为"<<nw<<endl; 
+				opened.erase(nw);
+				break;
+			}
+			case 4:{
+				for(int i=0;i<nw.size();++i){
+					if(isdigit(nw[i])||nw[i]==' ') continue;
+					puts("错误：玩家编号中含有非法字符。请重新输入合法命令，保存好后在本窗口任意键继续。");
+					in.close();
+					goto L1; 
+				}
+				int x,px;
+				stringstream ss;
+				ss<<nw;ss>>x;
+				ss.clear();
+				px=-1;
+				int l=-1;
+				in>>l;
+				in.close();
+				for(int i=1;i<=n;++i){
+					if(a[i].id==x) px=i;
+				}
+				if(px==-1){//User not found
+					puts("错误：输入了不存在的玩家编号。请重新输入合法命令，保存好后在本窗口任意键继续。");
+					goto L1; 
+				}
+				if(l==-1){
+					if(cfg[0]==0||cfg[3]==1) l=1;
+					else{//Number not found
+						puts("错误：输入了不存在的玩家给出词条编号。请重新输入合法命令，保存好后在本窗口任意键继续。");
+						goto L1; 
+					}
+				}
+				if(l>cfg[3]){
+					puts("错误：输入了不存在的玩家给出词条编号。请重新输入合法命令，保存好后在本窗口任意键继续。");
+					goto L1; 
+				}
+				if(a[px].name[l].fa==-1){// number is dead
+					puts("错误：输入的词条编号未被开。请重新输入合法命令，保存好后在本窗口任意键继续。");
+					goto L1; 
+				} 
+				if(a[px].dead())ret++;
+				a[px].name[l].fa=-1;
+				break;
+			}
 			default:{
 				printf("命令不合法，请重新输入合法操作。\n",ch);
 				goto L1;
@@ -291,7 +358,7 @@ printf("自助主持 V2.0 By 180-fz201812.23\n\
 	}
 	print(0,nxt);
 	printf("游戏结束。");
-	if(cfg[0]) printf("%d号玩家胜利。",a[win].id);
+	if(cfg[0]&&!forcestop) printf("%d号玩家胜利。",a[win].id);
 	printf("\n完整的结算信息已放至out.txt中。任意键关闭程序。");
 	ch=getch(); 
 	return 0;}

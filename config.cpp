@@ -5,9 +5,9 @@
 #include<windows.h>
 typedef long long ll;
 using namespace std;
-const int C=4;
+const int C=5;
 int cfg[C];
-string st[C-1][3]={"野局","开盒","游戏模式","不进行","进行","是否进行合理性审查","不保留","保留","被开词条是否保留"};
+string st[C-1][3]={"野局","开盒","游戏模式","不进行","进行","是否进行合理性审查","不保留","保留","被开词条是否保留","不开启","开启","是否开启下家显示"};
 ifstream in;
 ofstream out;
 void load(){
